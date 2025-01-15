@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -7,9 +8,28 @@
 // TODO: Bufferサイズは何を基準にする？
 #define BUFFER_SIZE 1024
 
+int TryClose(int socketFd)
+{
+    while (1)
+    {
+        if (errno == 4)
+        {
+            continue;
+        }
+        if (close(socketFd) == -1)
+        {
+            perror("Error: close() failed\n");
+            return 1;
+        }
+        return 0;
+    }
+}
+
+// clientFd will be closed at the end
 int Echo(int clientFd)
 {
     char recvBuffer[BUFFER_SIZE];
+    int sendSize;
 
     while (1)
     {
@@ -17,32 +37,36 @@ int Echo(int clientFd)
         if (recvSize == -1)
         {
             perror("Error: recv() failed\n");
-            if (close(clientFd) == -1)
+            if (TryClose(clientFd) == 1)
             {
-                perror("Error: close() failed\n");
                 return 1;
             }
             break;
         }
         else if (recvSize == 0)
         {
-            if (close(clientFd) == -1)
+            if (TryClose(clientFd) == 1)
             {
-                perror("Error: close() failed\n");
                 return 1;
             }
             break;
         }
-        // TODO: 一度にすべて送れなかった場合の対応
-        if (send(clientFd, recvBuffer, recvSize, 0) == -1)
+        while (1)
         {
-            perror("Error: send() failed\n");
-            if (close(clientFd) == -1)
+            sendSize = (clientFd, recvBuffer, recvSize, 0);
+            if (sendSize == recvSize)
             {
-                perror("Error: close() failed\n");
-                return 1;
+                break;
             }
-            break;
+            if (sendSize == -1)
+            {
+                perror("Error: send() failed\n");
+                if (TryClose(clientFd) == 1)
+                {
+                    return 1;
+                }
+                break;
+            }
         }
     }
     return 0;
@@ -65,11 +89,7 @@ int main()
     if (bind(socketFd, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1)
     {
         perror("Error: bind() failed\n");
-        if (close(socketFd) == -1)
-        {
-            perror("Error: close() failed\n");
-            return 1;
-        }
+        TryClose(socketFd);
         return 1;
     }
 
@@ -77,11 +97,7 @@ int main()
     if (listen(socketFd, 5) == -1)
     {
         perror("Error: listen() failed\n");
-        if (close(socketFd) == -1)
-        {
-            perror("Error: close() failed\n");
-            return 1;
-        }
+        TryClose(socketFd);
         return 1;
     };
 
@@ -93,9 +109,8 @@ int main()
         if (acceptedSocketFd == -1)
         {
             perror("Error: accept() failed\n");
-            if (close(socketFd) == -1)
+            if (TryClose(socketFd) == 1)
             {
-                perror("Error: close() failed\n");
                 return 1;
             }
             continue;

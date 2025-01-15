@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,47 +9,70 @@
 // TODO: Bufferサイズは何を基準にする？
 #define BUFFER_SIZE 1024
 
-int EchoRequest(int socketFd)
+int TryClose(int socketFd)
+{
+    while (1)
+    {
+        if (errno == 4)
+        {
+            continue;
+        }
+        if (close(socketFd) == -1)
+        {
+            perror("Error: close() failed\n");
+            return 1;
+        }
+        return 0;
+    }
+}
+
+int Communicate(int socketFd)
 {
     char sendBuffer[BUFFER_SIZE], recvBuffer[BUFFER_SIZE];
     int sendSize, recvSize;
 
     while (1)
     {
-        fgets(sendBuffer, BUFFER_SIZE, stdin);
-        // TODO: 一度にすべて送れなかった場合の対応
-        sendSize = send(socketFd, sendBuffer, BUFFER_SIZE, 0);
-        if (sendSize == -1)
+        if (fgets(sendBuffer, BUFFER_SIZE, stdin) == NULL)
         {
-            perror("Error: send() failed\n");
-            if (close(socketFd) == -1)
+            perror("Error: fgets() failed\n");
+        }
+
+        while (1)
+        {
+            sendSize = send(socketFd, sendBuffer, BUFFER_SIZE, 0);
+            if (sendSize == sizeof(sendBuffer))
             {
-                perror("Error: close() failed\n");
+                break;
+            }
+            if (sendSize == -1)
+            {
+                perror("Error: send() failed\n");
+                TryClose(socketFd);
                 return 1;
             }
-            return 1;
         }
+
         recvSize = recv(socketFd, recvBuffer, BUFFER_SIZE, 0);
         if (recvSize == -1)
         {
-            perror("Error: recv() failed");
-            if (close(socketFd) == -1)
-            {
-                perror("Error: close() failed\n");
-                return 1;
-            }
+            perror("Error: recv() failed\n");
+            TryClose(socketFd);
             return 1;
         }
         if (recvSize == 0)
         {
-            puts("server did not respond\n");
+            puts("server did not respond");
             break;
         }
-        puts(recvBuffer);
+        if (puts(recvBuffer) == EOF)
+        {
+            perror("Error: puts failed\n");
+            return 1;
+        }
     }
-    if (close(socketFd) == -1)
+    if (TryClose(socketFd) == 1)
     {
-        perror("Error: close() failed\n");
         return 1;
     }
     return 0;
@@ -76,7 +100,7 @@ int main()
     }
 
     // echo
-    if (EchoRequest(socketFd) == 1)
+    if (Communicate(socketFd) == 1)
     {
         return 1;
     }
