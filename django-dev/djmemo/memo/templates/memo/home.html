@@ -1,0 +1,21 @@
+{% extends 'memo/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="home-header">
+    <h1>Home</h1>
+    <a href="{% url 'add_memo' %}" class="add-button">+ Add Memo</a>
+</div>
+
+<ul>
+    {% for memo in memos %}
+    <li>
+        <a href="{% url 'memo_detail' memo.pk %}" class="memo-title-link">
+            <strong>{{ memo.title }}</strong>
+        </a>
+        <em style="margin-left: 8px;">{{ memo.pub_date }}</em>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

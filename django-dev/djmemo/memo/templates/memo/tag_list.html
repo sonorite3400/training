@@ -1,0 +1,19 @@
+{% extends 'memo/base.html' %}
+
+{% block title %}Tag List{% endblock %}
+
+{% block content %}
+<div class="tag-list-header">
+    <h1>Tags</h1>
+    <a href="{% url 'tag_create' %}" class="add-button">Add Tag</a>
+</div>
+
+<ul>
+    {% for tag in tags %}
+    <li>
+        <a href="{% url 'tag_detail' tag.name %}">{{ tag.name }}</a>
+    </li>
+    {% endfor %}
+</ul>
+
+{% endblock %}

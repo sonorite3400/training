@@ -1,0 +1,17 @@
+{% extends 'memo/base.html' %}
+
+{% block title %}Add New Memo{% endblock %}
+
+{% block content %}
+<div class="form-header">
+    <h1>Add New Memo</h1>
+    <a href="{% url 'home' %}" class="back-link-button">Back to Home</a>
+</div>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="add-button" style="border-width: 0cap;">Add</button>
+</form>
+
+{% endblock %}
