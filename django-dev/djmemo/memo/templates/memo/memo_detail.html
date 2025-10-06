@@ -1,0 +1,26 @@
+{% extends 'memo/base.html' %}
+
+{% block title %}{{ memo.title }}{% endblock %}
+
+{% block content %}
+<div class="memo-detail">
+    <div class="tag-list-header">
+        <h1>{{ memo.title }}</h1>
+        <a href="{% url 'memo_edit' memo.pk %}" class="edit-btn">
+            <i class="fas fa-pen"></i>Edit
+        </a>
+    </div>
+
+    <p>Tags:
+        {% for tag in memo.tags.all %}
+        <a href="{% url 'tag_detail' tag.name %}" class="tag-link">{{ tag.name }}</a>
+        {% endfor %}
+    </p>
+
+
+    <div class="memo-text-container">
+        <p>{{ memo.text|safe }}</p>
+    </div>
+    <p><em>Published on: {{ memo.pub_date }}</em></p>
+</div>
+{% endblock %}

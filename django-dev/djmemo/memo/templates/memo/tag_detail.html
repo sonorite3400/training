@@ -1,0 +1,24 @@
+{% extends 'memo/base.html' %}
+
+{% block title %}Tag: {{ tag.name }}{% endblock %}
+
+{% block content %}
+<div class="tag-detail">
+    <h1>Tag: {{ tag.name }}</h1>
+
+    {% if memos %}
+    <ul>
+        {% for memo in memos %}
+        <li>
+            <a href="{% url 'memo_detail' memo.pk %}" class="memo-title-link">
+                {{ memo.title }}
+            </a>
+            <em style="margin-left: 8px;">{{ memo.pub_date }}</em>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No memos found for this tag.</p>
+    {% endif %}
+</div>
+{% endblock %}
